@@ -2,12 +2,12 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="Node.h" />
-    <ClInclude Include="pthread.h" />
-    <ClInclude Include="sched.h" />
-    <ClInclude Include="semaphore.h" />
+    <ClInclude Include="KadNode.h" />
+    <ClInclude Include="ECKadNode.h" />
+    <ClInclude Include="Kad2Node.h" />
+    <ClInclude Include="header.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Node.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
 </Project>

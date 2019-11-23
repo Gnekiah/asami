@@ -1,37 +1,75 @@
-#include "Node.h"
+#include "KadNode.h"
+#include "Kad2Node.h"
+#include "ECKadNode.h"
 #include <map>
 #include <thread>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
-std::string generate_node_id() {
-    std::string id = "";
-
-    // TODO
-    return id;
+uint64_t RandDataSize()
+{
+    // from 4KB -- 4GB
+    uint64_t nData = (rand() % (1024 * 1024 * 1024)) * 4;
+    if (nData < 1024 * 4)
+        return RandDataSize();
+    return nData;
 }
 
 int main() {
-    std::map<std::string, Node*> node_maps;
-    std::vector<std::thread*> thread_vecs;
+    KadNode kadnode;
+    Kad2Node kad2node;
+    ECKadNode eckadnode;
 
-    for (int i = 0; i < 100; i++) {
-        std::string nodeid = generate_node_id();
-        Node* node = new Node(nodeid);
-        node_maps.insert(std::pair<std::string, Node*>(nodeid, node));
+    std::vector<uint64_t> kad_used_vec;
+    //std::vector<uint64_t> kad_clash_vec;
+    std::vector<uint64_t> kad2_used_vec;
+    std::vector<uint64_t> kad2_clash_vec;
+    std::vector<uint64_t> eckad_used_vec;
+    //std::vector<uint64_t> eckad_clash_vec;
+
+    // 1000 nodes
+    for (int i = 0; i < 1000; i++) {
+        uint64_t r = Rand60();
+        kadnode.AddNode(r);
+        kad2node.AddNode(r);
+        eckadnode.AddNode(r);
     }
 
-    for (auto iter = node_maps.begin(); iter != node_maps.end(); iter++) {
-        Node* n = iter->second;
-        std::thread *thread = new std::thread(&Node::Start, n);
-        thread_vecs.push_back(thread);
+    // 100000 objects
+    for (int i = 0; i < 10000; i++) {
+        if (i % 1000 == 0)
+            std::cout << "Write Object " << i << std::endl;
+
+        uint64_t obj_key = Rand60();
+        uint64_t obj_size = RandDataSize();
+        kadnode.PushData(obj_key, obj_size);
+        kad2node.PushData(obj_key, obj_size);
+        eckadnode.PushData(obj_key, obj_size);
+
+        kad_used_vec.push_back(kadnode.GetAllUsedSize());
+        //kad_clash_vec.push_back(kadnode.GetAllClashSize());
+        kad2_used_vec.push_back(kad2node.GetAllUsedSize());
+        kad2_clash_vec.push_back(kad2node.GetAllClashSize());
+        eckad_used_vec.push_back(eckadnode.GetAllUsedSize());
+        //eckad_clash_vec.push_back(eckadnode.GetAllClashSize());
     }
 
-    for (auto iter = thread_vecs.begin(); iter != thread_vecs.end(); iter++) {
-        std::thread* t = *iter;
-        t->join();
-        
-    }
+    auto write_fn = [&](std::string path, std::vector<uint64_t> vec1, 
+        std::vector<uint64_t> vec2, std::vector<uint64_t> vec3, std::vector<uint64_t> vec4) {
+        std::ofstream out(path, std::ios::app);
+        auto it1 = vec1.begin();
+        auto it2 = vec2.begin();
+        auto it3 = vec3.begin();
+        auto it4 = vec4.begin();
+        for (; it1 != vec1.end(); it1++, it2++, it3++, it4++) {
+            out << *it1 << "," << *it2 << "," << *it3 << "," << *it4 << std::endl;
+        }
+        out.close();
+    };
+
+    write_fn("I:/asami/ret.csv", kad_used_vec, kad2_used_vec, eckad_used_vec, kad2_clash_vec);
 
     return 0;
 }

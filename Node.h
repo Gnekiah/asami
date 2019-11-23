@@ -4,6 +4,8 @@
 #include <queue>
 #include <vector>
 #include <mutex>
+#include <cstdint>
+#include <map>
 
 typedef struct Block {
     std::string blkid;
@@ -18,14 +20,34 @@ typedef struct Message {
 
 class Node {
 public:
-    Node(std::string nodeid);
-    void Start();
+    Node(const Node&) = delete;
+    Node& operator=(const Node&) = delete;
+    Node(uint64_t id)
+        : nid_(id)
+    {
+        used_size_ = 0;
+        blk_maps_ = new std::map<uint64_t, uint64_t>();
+    }
+    ~Node() {
+        delete blk_maps_;
+    }
 
-    void PushMessage(Message msg);
+    // return true while clash
+    bool Put(uint64_t blkid, uint64_t size)
+    {
+        auto iter = blk_maps_->find(blkid);
+        if (iter == blk_maps_->end()) {
+            used_size_ += size;
+            blk_maps_->insert(std::pair<uint64_t, uint64_t>(blkid, size));
+            return false;
+        }
+        return true;
+    }
+    uint64_t GetUsedSize() { return used_size_; }
+    uint64_t GetId() { return nid_; }
 
 private:
-    std::string nodeid_;
-    std::vector<Block>* blk_list_ = nullptr;
-    std::queue<Message>* msg_list_ = nullptr;
-    std::mutex msg_list_lock_;
+    uint64_t nid_;
+    uint64_t used_size_;
+    std::map<uint64_t, uint64_t>* blk_maps_ = nullptr;
 };
